@@ -267,8 +267,10 @@ p {
 
 .contact-links {
     display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
+    flex-direction: row;
+    gap: 2rem;
+    justify-content: flex-start;
+    flex-wrap: wrap;
 }
 
 .contact-link {

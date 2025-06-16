@@ -14,8 +14,8 @@
         <div class="nav-links">
             <a href="#about" class="nav-link">about</a>
             <a href="#projects" class="nav-link">projects</a>
-            <a href="#contact" class="nav-link">get in touch</a>
             <a href="#blogs" class="nav-link">blogs</a>
+            <a href="#contact" class="nav-link">get in touch</a>
             <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
                 <svg class="sun-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 17.5C9.5 17.5 7.5 15.5 7.5 13S9.5 8.5 12 8.5 16.5 10.5 16.5 13 14.5 17.5 12 17.5M12 9C10.3 9 9 10.3 9 12S10.3 15 12 15 15 13.7 15 12 13.7 9 12 9M12 2L14.39 5.42C13.65 5.15 12.84 5 12 5S10.35 5.15 9.61 5.42L12 2M20 12L16.58 14.39C16.85 13.65 17 12.84 17 12S16.85 10.35 16.58 9.61L20 12M12 22L9.61 18.58C10.35 18.85 11.16 19 12 19S13.65 18.85 14.39 18.58L12 22M4 12L7.42 9.61C7.15 10.35 7 11.16 7 12S7.15 13.65 7.42 14.39L4 12"/>
@@ -123,6 +123,25 @@
             </div>
         </section>
 
+        <!-- Blogs Section -->
+        <section id="blogs" class="blogs-section">
+            <h2 class="blogs-title">Blogs</h2>
+            <div class="blogs-content">
+                <div class="blog-posts">
+                    <div class="blog-card" onclick="openBlogPost('blog-greedy-algorithms.html')">
+                        <h3>Greedy Algorithms, and When "Good Enough" is Perfect</h3>
+                        <p class="blog-date">January 15, 2024</p>
+                        <div class="blog-excerpt">
+                            <p>A practical exploration of using greedy algorithms for mechanical part dimensioning. Sometimes choosing the best local option at each step gives you a solution that's either optimal or good enough to be indistinguishable from optimal.</p>
+                        </div>
+                        <div class="read-more">
+                            <span>Read more →</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Contact Section -->
         <section id="contact" class="contact-section">
             <h2 class="contact-title">Get in Touch</h2>
@@ -157,25 +176,6 @@
                         <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
                     </svg>
                 </a>
-            </div>
-        </section>
-
-        <!-- Blogs Section -->
-        <section id="blogs" class="blogs-section">
-            <h2 class="blogs-title">Blogs</h2>
-            <div class="blogs-content">
-                <div class="blog-posts">
-                    <div class="blog-card" onclick="openBlogPost('blog-greedy-algorithms.html')">
-                        <h3>Greedy Algorithms, and When "Good Enough" is Perfect</h3>
-                        <p class="blog-date">January 15, 2024</p>
-                        <div class="blog-excerpt">
-                            <p>A practical exploration of using greedy algorithms for mechanical part dimensioning. Sometimes choosing the best local option at each step gives you a solution that's either optimal or good enough to be indistinguishable from optimal.</p>
-                        </div>
-                        <div class="read-more">
-                            <span>Read more →</span>
-                        </div>
-                    </div>
-                </div>
             </div>
         </section>
     </main>

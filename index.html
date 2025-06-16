@@ -164,7 +164,55 @@
         <section id="blogs" class="blogs-section">
             <h2 class="blogs-title">Blogs</h2>
             <div class="blogs-content">
-                <p>Coming soon...</p>
+                <div class="blog-posts">
+                    <div class="blog-post">
+                        <h3>Greedy Algorithms, and When "Good Enough" is Perfect</h3>
+                        <p class="blog-date">January 15, 2024</p>
+                        <div class="blog-content">
+                            <p>Let's say you're designing a tool that generates dimensioning views of mechanical parts. You're given a part and a list of critical faces. The goal is to pick up to six standard views (top, bottom, left, right, front, rear) that together show all the critical faces clearly.</p>
+                            
+                            <p>A brute-force solution would evaluate every subset of views. That's 2⁶ = 64 combinations. Manageable, but not elegant.</p>
+                            
+                            <p>So I reached for a greedy algorithm.</p>
+                            
+                            <h4>What's a greedy algorithm?</h4>
+                            <p>A greedy algorithm builds a solution step by step, always choosing the best local option at each step — without backtracking or worrying about future consequences.</p>
+                            
+                            <p>In our case, it looks like this:</p>
+                            <ol>
+                                <li>Start with no views selected.</li>
+                                <li>At each step, pick the view that reveals the most uncovered critical faces.</li>
+                                <li>Repeat until all faces are covered (or we hit the 6-view limit).</li>
+                            </ol>
+                            
+                            <p>It's fast. It's simple. And in many real-world cases, it gives an answer that's either optimal or good enough to be indistinguishable from optimal.</p>
+                            
+                            <h4>What does "covered" mean?</h4>
+                            <p>We defined a face as "covered" if at least one triangle from that face is visible in the view — i.e., its normal vector points sufficiently toward the camera.</p>
+                            
+                            <p>We used this condition:</p>
+                            <pre><code>np.dot(normal, -view_direction) > angle_threshold</code></pre>
+                            
+                            <p>Which translates to: "Is this triangle facing within ~60° of the camera?"<br>
+                            (The threshold we used was 0.5, which is cos(60°).)</p>
+                            
+                            <p>This avoids false positives from edge-on views, where the face is technically visible but not dimensionable.</p>
+                            
+                            <h4>Why greedy works well here</h4>
+                            <ul>
+                                <li>Each view can only do so much — you're constrained to six fixed angles.</li>
+                                <li>Most parts don't require exotic viewpoints.</li>
+                                <li>The best view at each step tends to be obvious (e.g. if "Front" covers five unseen faces and "Top" only covers two, you pick "Front").</li>
+                            </ul>
+                            
+                            <p>We tested this across several STEP files with varied complexity. Greedy selection reliably covered all critical faces using 2–4 views, well under the limit of 6.</p>
+                            
+                            <p>No complex heuristics. No optimization libraries. Just a solid greedy loop and a normal threshold.</p>
+                            
+                            <p><strong>Sometimes, good enough is perfect.</strong></p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
     </main>

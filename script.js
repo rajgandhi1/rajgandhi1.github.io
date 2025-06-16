@@ -79,4 +79,9 @@ document.addEventListener('DOMContentLoaded', function() {
             newTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
         );
     });
-}); 
+});
+
+// Function to open blog post in new page
+function openBlogPost(url) {
+    window.location.href = url;
+} 

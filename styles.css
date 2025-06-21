@@ -807,4 +807,116 @@ p {
     .blog-post-full h2 {
         font-size: 1.5rem;
     }
+}
+
+/* Blog content styles */
+.blog-subtitle {
+    font-style: italic;
+    color: #666666;
+    font-size: 1.1rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0;
+}
+
+[data-theme="dark"] .blog-subtitle {
+    color: #A1A1AA;
+}
+
+.blog-image {
+    margin: 2rem 0;
+    text-align: center;
+}
+
+.blog-image img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease;
+}
+
+[data-theme="dark"] .blog-image img {
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+}
+
+.blog-image img:hover {
+    transform: scale(1.02);
+}
+
+.image-caption {
+    margin-top: 1rem;
+    font-style: italic;
+    color: #666666;
+    font-size: 0.9rem;
+}
+
+[data-theme="dark"] .image-caption {
+    color: #A1A1AA;
+}
+
+.blog-content blockquote {
+    border-left: 4px solid #00A3FF;
+    padding: 1rem 1.5rem;
+    margin: 1.5rem 0;
+    background-color: #F8F9FA;
+    font-style: italic;
+}
+
+[data-theme="dark"] .blog-content blockquote {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-left-color: #00A3FF;
+}
+
+.blog-content blockquote p {
+    margin: 0.5rem 0;
+}
+
+.blog-content h3 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 2rem 0 1rem 0;
+    color: #1A1A1A;
+}
+
+[data-theme="dark"] .blog-content h3 {
+    color: #FFFFFF;
+}
+
+.blog-content sup {
+    font-size: 0.75em;
+    vertical-align: super;
+}
+
+.blog-content ol {
+    counter-reset: list-counter;
+    list-style: none;
+    padding-left: 1.5rem;
+}
+
+.blog-content ol li {
+    counter-increment: list-counter;
+    position: relative;
+    margin-bottom: 0.5rem;
+}
+
+.blog-content ol li::before {
+    content: counter(list-counter) ".";
+    position: absolute;
+    left: -1.5rem;
+    font-weight: 600;
+    color: #00A3FF;
+}
+
+.blog-copyright {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid #E5E7EB;
+    text-align: center;
+    color: #666666;
+    font-size: 0.9rem;
+}
+
+[data-theme="dark"] .blog-copyright {
+    border-top-color: rgba(255, 255, 255, 0.1);
+    color: #A1A1AA;
 } 

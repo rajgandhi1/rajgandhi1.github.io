@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Building visual search for inventory management with Qdrant - Raj Gandhi</title>
+    <meta name="description" content="How I'm solving the 'where the hell is that thing' problem with vector databases, and why traditional inventory systems are fundamentally broken.">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <a href="index.html" class="logo">Raj Gandhi</a>
+        <div class="nav-links">
+            <a href="index.html#about" class="nav-link">about</a>
+            <a href="index.html#projects" class="nav-link">projects</a>
+            <a href="index.html#contact" class="nav-link">get in touch</a>
+            <a href="index.html#blogs" class="nav-link">blogs</a>
+            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                <svg class="sun-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 17.5C9.5 17.5 7.5 15.5 7.5 13S9.5 8.5 12 8.5 16.5 10.5 16.5 13 14.5 17.5 12 17.5M12 9C10.3 9 9 10.3 9 12S10.3 15 12 15 15 13.7 15 12 13.7 9 12 9M12 2L14.39 5.42C13.65 5.15 12.84 5 12 5S10.35 5.15 9.61 5.42L12 2M20 12L16.58 14.39C16.85 13.65 17 12.84 17 12S16.85 10.35 16.58 9.61L20 12M12 22L9.61 18.58C10.35 18.85 11.16 19 12 19S13.65 18.85 14.39 18.58L12 22M4 12L7.42 9.61C7.15 10.35 7 11.16 7 12S7.15 13.65 7.42 14.39L4 12"/>
+                </svg>
+                <svg class="moon-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.75,4.09L15.22,6.03L16.13,9.09L13.5,7.28L10.87,9.09L11.78,6.03L9.25,4.09L12.44,4L13.5,1L14.56,4L17.75,4.09M21.25,11L19.61,12.25L20.2,14.23L18.5,13.06L16.8,14.23L17.39,12.25L15.75,11L17.81,10.95L18.5,9L19.19,10.95L21.25,11M18.97,15.95C19.8,15.87 20.69,17.05 20.16,17.8C19.84,18.25 19.5,18.67 19.08,19.07C15.17,23 8.84,23 4.94,19.07C1.03,15.17 1.03,8.83 4.94,4.93C5.34,4.53 5.76,4.17 6.21,3.85C6.96,3.32 8.14,4.21 8.06,5.04C7.79,7.9 8.75,10.87 10.95,13.06C13.14,15.26 16.1,16.22 18.97,15.95M17.33,17.97C14.5,17.81 11.7,16.64 9.53,14.5C7.36,12.31 6.2,9.5 6.04,6.68C3.23,9.82 3.34,14.4 6.35,17.41C9.37,20.43 14,20.54 17.33,17.97Z"/>
+                </svg>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="main-container">
+        <!-- Blog Post Content -->
+        <article class="blog-post-full">
+            <header class="blog-post-header">
+                <a href="index.html#blogs" class="back-link">← Back</a>
+                <h1>Building visual search for inventory management with Qdrant</h1>
+                <p class="blog-date">February 25, 2025</p>
+                <p class="blog-subtitle">How I'm solving the "where the hell is that thing" problem with vector databases, and why traditional inventory systems are fundamentally broken.</p>
+            </header>
+            
+            <div class="blog-content">
+                <p><em>A deployed-stage note</em></p>
+                
+                <p>There's this one problem that keeps coming up in every single project: <strong>nobody can find anything</strong>. Or finding something takes loads of time.</p>
+                
+                <p>It doesn't matter if it's a warehouse with 50,000 objects, a place with industrial equipment, or an archive with historical documents. The conversation always goes like this:</p>
+                
+                <blockquote>
+                    <p>"Hey, do you know where that bronze plate is?"<br>
+                    "Um... check aisle 12? Or maybe it's in storage? Let me look through the database..."<br>
+                    <em>15 minutes of database queries later</em><br>
+                    "I think it might be object ID 2847... or was it 2874? Can you describe it again?"</p>
+                </blockquote>
+                
+                <p>This drives me absolutely nuts. We have smartphones that can identify dog breeds from a blurry photo, but professional inventory systems still make you search by typing "bronze sculpture intricate base" and hoping for the best.</p>
+                
+                <h2>What I built instead</h2>
+                
+                <p>So I built a system where you can literally just take a photo of anything and find it in your inventory in under 500ms. Here's the stupid-simple user experience I was going for:</p>
+                
+                <ol>
+                    <li>Open the app, tap the camera button</li>
+                    <li>Point your phone at the thing you're looking for</li>
+                    <li>Get back the exact item with its current location, condition, and whatever other metadata you need</li>
+                </ol>
+                
+                <p>That's it. No typing, no remembering cryptic ID numbers, no browsing through categories.</p>
+                
+                <div class="blog-image">
+                    <img src="app-flow-demo.png" alt="App Workflow Diagram" />
+                    <p class="image-caption"><em>General workflow of the visual search system - from photo capture to inventory results</em></p>
+                </div>
+                
+                <p>The technical implementation ended up being more interesting than I expected, mainly because I had to solve the "visual similarity" problem at scale. Traditional image search is either exact matches (useless for real-world photos) or relies on manual tagging (which nobody keeps up to date).</p>
+                
+                <h2>The architecture that actually works</h2>
+                
+                <p>I ended up with a four-part system that I'm pretty happy with:</p>
+                
+                <h3>1. The embedding model</h3>
+                <p>I'm using a modified CLIP model called CSD (Contrastive Search Descriptor)<sup>1</sup> that's specifically trained for visual object analysis. It takes any 224x224 image and spits out a 768-dimensional vector that represents the visual "fingerprint" of whatever's in the photo.</p>
+                
+                <p>The key insight here is that it extracts <strong>style embeddings</strong> rather than just content embeddings. This means it captures things like material, texture, shape, and form—exactly what you need to distinguish between similar objects in an inventory.</p>
+                
+                <h3>2. Qdrant for vector search</h3>
+                <p>Here's where it gets fun. All those 768-dimensional embeddings get stored in Qdrant<sup>2</sup>, which is basically a search engine designed specifically for high-dimensional vectors. When someone uploads a photo, the system:</p>
+                
+                <ul>
+                    <li>Generates an embedding for the new photo</li>
+                    <li>Asks Qdrant "what are the 5 most similar vectors you've seen?"</li>
+                    <li>Gets back candidates in milliseconds, even with 180,000+ items indexed</li>
+                </ul>
+                
+                <p>The search is based on cosine similarity, which works surprisingly well for this use case. Items that look similar end up close together in the 768-dimensional space.</p>
+                
+                <h3>3. PostgreSQL for the boring stuff</h3>
+                <p>The vector search gives you visual matches, but you still need all the operational metadata—current location, condition notes, who last moved it, etc. This all lives in a regular PostgreSQL database, indexed by item ID.</p>
+                
+                <p>The workflow is: vector search finds the candidates, then PostgreSQL lookup gets you the full record with everything you actually need to locate and manage the item.</p>
+                
+                <h3>4. The ingestion pipeline</h3>
+                <p>Getting your existing inventory into this system is the hard part. Most organizations have their inventory data scattered across spreadsheets, legacy databases, and photo folders on various people's computers.</p>
+                
+                <p>I built a batch processing system that:</p>
+                <ul>
+                    <li>Ingests whatever data format you have (CSV, database exports, etc.)</li>
+                    <li>Standardizes the metadata fields</li>
+                    <li>Processes all the item photos to generate embeddings</li>
+                    <li>Handles missing images, duplicate detection, and data quality issues</li>
+                    <li>Stores everything in both databases</li>
+                </ul>
+                
+                <p>It runs with configurable concurrency (8 workers seems to be the sweet spot) and has comprehensive error handling, because real-world inventory data is always messier than you expect.</p>
+                
+                <p>The whole stack is containerized and runs on AWS. The embedding service is Python (because that's where all the ML libraries are), and the API layer is Node.js (because it's fast and easy to deploy).</p>
+                
+                <h2>Implementation details</h2>
+                
+                <p>If you want to build something similar, here are the technical decisions that actually mattered:</p>
+                
+                <h3>Database setup</h3>
+                <p>I went with Qdrant for the vector stuff because it's very easy to get running:</p>
+                
+                <pre><code>docker run -p 6333:6333 qdrant/qdrant:latest</code></pre>
+                
+                <p>That's literally it. No configuration files, no complex setup. It just works.</p>
+                
+                <p>For PostgreSQL, I needed a schema that could handle the chaos of real-world inventory data. The key insight is that every organization has different metadata fields, so you need a flexible schema that doesn't break when someone has 47 custom fields for their ceramic collection.</p>
+                
+                <h3>The embedding service</h3>
+                <p>This was the trickiest part. Running deep learning models in production is annoying—they're huge, they need specific Python versions, they eat memory, and they take forever to load.</p>
+                
+                <p>I ended up wrapping the CSD model in a FastAPI service that:</p>
+                <ul>
+                    <li>Downloads the model weights from S3 on startup (because Docker images with ML models are very large)</li>
+                    <li>Loads the model once and keeps it in memory</li>
+                    <li>Serves embedding requests over HTTP</li>
+                    <li>Handles image preprocessing and normalization</li>
+                </ul>
+                
+                <p>The service takes about 30 seconds to start up (loading the model), but after that it can process images in ~100ms each.</p>
+                
+                <h3>Vector search configuration</h3>
+                <p>Creating the Qdrant collection was straightforward once I figured out the right parameters:</p>
+                
+                <pre><code>await qdrantClient.createCollection('inventory', {
+  vectors: {
+    size: 768,  // CSD model output size
+    distance: 'Cosine'  // Works better than Euclidean for this use case
+  },
+  optimizers_config: {
+    default_segment_number: 2  // Better performance for large collections
+  }
+});</code></pre>
+                
+                <p>The key thing is using cosine similarity instead of Euclidean distance. Cosine similarity ignores vector magnitude and focuses on direction, which works much better for visual embeddings.</p>
+                
+                <h3>The data ingestion problem</h3>
+                <p>This is where most projects die. Everyone's inventory data is a mess. I've seen:</p>
+                <ul>
+                    <li>Spreadsheets with item photos stored as file paths that don't exist anymore</li>
+                    <li>Database exports where half the image URLs return 404s</li>
+                    <li>Photo folders with cryptic filenames like "IMG_0247.jpg"</li>
+                    <li>Metadata where the location field contains everything from "Storage Room B" to "Ask Janet"</li>
+                </ul>
+                
+                <p>I built the ingestion pipeline to be extremely fault-tolerant:</p>
+                
+                <pre><code>// Process items with configurable concurrency
+const workers = Array.from({ length: 8 }, (_, i) => 
+  processItems(itemQueue, workerId: i)
+);
+
+// For each item:
+// 1. Validate image exists and is readable
+// 2. Generate thumbnail
+// 3. Upload to S3 with error handling
+// 4. Generate embedding with retry logic
+// 5. Store in both databases with transaction safety</code></pre>
+                
+                <p>The pipeline tracks success/failure rates and gives you detailed reports on what went wrong and why. This is crucial because you'll need to fix data issues and re-run the ingestion multiple times.</p>
+                
+                <h3>Search API design</h3>
+                <p>The search endpoint ended up being simpler than I expected:</p>
+                
+                <pre><code>app.post('/api/search', async (req, res) => {
+  // Generate embedding for uploaded image
+  const embedding = await embeddingService.generate(req.file);
+  
+  // Search Qdrant for similar vectors
+  const candidates = await qdrant.search('inventory', {
+    vector: embedding,
+    limit: 10,
+    score_threshold: 0.65  // Filter out low-confidence matches
+  });
+  
+  // Get full metadata from PostgreSQL
+  const items = await db.getItemsByIds(candidates.map(c => c.payload.id));
+  
+  return res.json({ items, searchTime: '127ms' });
+});</code></pre>
+                
+                <p>The similarity threshold of 0.65 was determined through trial and error. Below that, you get too many false positives. Above 0.75, you miss valid matches due to lighting or angle differences.</p>
+                
+                <h2>What actually works (and what doesn't)</h2>
+                
+                <p>I've been running this in production for a few months now with about 180,000 items indexed. Here's what I've learned:</p>
+                
+                <h3>The good stuff</h3>
+                <ul>
+                    <li><strong>Speed</strong>: Sub-500ms search times, even with the full dataset</li>
+                    <li><strong>Accuracy</strong>: ~85% for decent photos, which is way better than text search</li>
+                    <li><strong>Robustness</strong>: Works surprisingly well with poor lighting, weird angles, and partial views</li>
+                    <li><strong>Scale</strong>: No performance degradation as the index grows (thanks, Qdrant)</li>
+                </ul>
+                
+                <h3>The frustrating edge cases</h3>
+                <ul>
+                    <li><strong>Shiny objects</strong>: Anything reflective is a nightmare. The embeddings focus on the reflections instead of the object itself</li>
+                    <li><strong>Very similar items</strong>: Can't distinguish between identical models in different colors/finishes</li>
+                    <li><strong>Complex assemblies</strong>: Multi-part objects where someone photographed just one component</li>
+                    <li><strong>Terrible photos</strong>: Motion blur, extreme lighting, or photos taken through glass basically don't work</li>
+                </ul>
+                
+                <h3>Unexpected wins</h3>
+                <p>The system turned out to be useful for things I didn't anticipate:</p>
+                
+                <ol>
+                    <li><strong>Duplicate detection</strong>: Items that end up with very similar embeddings are often duplicates in the inventory system</li>
+                    <li><strong>Condition tracking</strong>: The same item photographed years apart often has noticeably different embeddings if its condition has changed significantly</li>
+                    <li><strong>Variant identification</strong>: Finding items that are similar but not identical—useful for "we need another one like this" requests</li>
+                </ol>
+                
+                <h2>The bigger picture</h2>
+                
+                <p>The most interesting thing about building this wasn't the technical implementation—it was watching how people actually use visual search versus traditional inventory systems.</p>
+                
+                <p>With text search, people limit their queries to what they think might be in the database. They search for "sculpture" instead of "that weird twisted metal thing" because they're trying to match the database vocabulary.</p>
+                
+                <p>With visual search, they just point their phone at the thing. No mental translation layer, no guessing at keywords, no browsing through categories.</p>
+                
+                <p>This changes the entire relationship between people and their inventory systems. Instead of the database being this intimidating thing you have to learn to query properly, it becomes an extension of your visual memory.</p>
+                
+                <h2>Why this matters</h2>
+                
+                <p>I've spent way too much time watching people struggle with inventory systems that were designed in the 1980s and haven't fundamentally changed since. The technology exists to make these systems dramatically better, but most organizations are stuck with whatever ERP system their IT department chose five years ago.</p>
+                
+                <p>Visual search isn't going to replace traditional inventory management overnight, but it's a glimpse of what these systems could be like if we designed them around how people actually think and work.</p>
+                
+                <p>The real breakthrough isn't the technology—it's the user experience. When you can find anything in your inventory by just pointing your phone at it, you stop thinking about "database queries" and start thinking about "where did I put that thing?"</p>
+                
+                <p>This system has been running in production for several months now, and the feedback has been universally positive. People who were previously intimidated by the inventory database are now power users. The time spent searching for items has dropped dramatically.</p>
+                
+                <p>But more importantly, it's changed how people think about documenting and organizing their collections. When adding a new item is as simple as taking a photo, people actually do it. When finding items is effortless, people trust the system to work.</p>
+                
+                <h2>References</h2>
+                
+                <ol>
+                    <li>CSD (Contrastive Search Descriptor) - A deep learning model for artwork style analysis</li>
+                    <li>Qdrant Vector Database. <a href="https://qdrant.tech/" target="_blank">https://qdrant.tech/</a>. Accessed 2025-02-25.</li>
+                    <li>OpenAI CLIP: Learning Transferable Visual Models From Natural Language Supervision. <a href="https://arxiv.org/abs/2103.00020" target="_blank">https://arxiv.org/abs/2103.00020</a></li>
+                </ol>
+                
+                <h2>Backlinks</h2>
+                
+                <ul>
+                    <li>Building semantic search systems with vector databases</li>
+                    <li>Computer vision applications in operations management</li>
+                    <li>The intersection of AI and inventory optimization</li>
+                </ul>
+                
+                <p class="blog-copyright">© 2025 Raj Gandhi</p>
+            </div>
+        </article>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html> 

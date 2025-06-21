@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Rubik's Cube Animation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background-color: #FFFFFF;
+            color: #1A1A1A;
+            overflow: hidden;
+        }
+
+        [data-theme="dark"] body {
+            background-color: #0A0A0A;
+            color: #FFFFFF;
+        }
+
+        .container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        #cube-container {
+            width: 600px;
+            height: 600px;
+            max-width: 80vw;
+            max-height: 80vh;
+        }
+
+        .controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 10;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: 2px solid #666666;
+            color: #666666;
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .theme-toggle:hover {
+            color: #1A1A1A;
+            border-color: #1A1A1A;
+            background-color: rgba(102, 102, 102, 0.1);
+        }
+
+        [data-theme="dark"] .theme-toggle {
+            color: #A1A1AA;
+            border-color: #A1A1AA;
+        }
+
+        [data-theme="dark"] .theme-toggle:hover {
+            color: #FFFFFF;
+            border-color: #FFFFFF;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .info {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            font-size: 14px;
+            color: #666666;
+            z-index: 10;
+        }
+
+        [data-theme="dark"] .info {
+            color: #A1A1AA;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="controls">
+            <button class="theme-toggle" id="theme-toggle">Toggle Theme</button>
+        </div>
+        
+        <div id="cube-container"></div>
+        
+        <div class="info">
+            <p>3D Rubik's Cube Animation</p>
+            <p>Drag to rotate • Auto-solving animation</p>
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.161.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.161.0/examples/jsm/"
+            }
+        }
+    </script>
+    
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+        let camera, scene, renderer, controls, composer;
+        let rubiksCube, cubeGroup, rotationGroup;
+        let isAnimating = false;
+        let rotatingPieces = [];
+        let rotationAxis = 'x';
+        let rotationDirection = 1;
+        let animationProgress = 0;
+        const cubeSize = 0.6;
+        const animationSpeed = 0.01;
+        const cubeContainer = document.getElementById('cube-container');
+
+        function getThemeColors() {
+            const isDarkMode = document.body.getAttribute('data-theme') === 'dark' || 
+                               (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches && !document.body.getAttribute('data-theme'));
+            return {
+                background: isDarkMode ? new THREE.Color('#0A0A0A') : new THREE.Color('#FFFFFF'),
+                pieceColor: isDarkMode ? 0x2C2C2C : 0xDDDDDD,
+                stickerColor: isDarkMode ? 0x1A1A1A : 0xFFFFFF,
+                ambientLight: isDarkMode ? 0x888888 : 0xFFFFFF,
+                bloom: isDarkMode ? 0.1 : 0.05
+            };
+        }
+
+        function init() {
+            const theme = getThemeColors();
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, cubeContainer.clientWidth / cubeContainer.clientHeight, 0.1, 1000);
+            camera.position.set(0, 0, 4);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+            renderer.setSize(cubeContainer.clientWidth, cubeContainer.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.toneMapping = THREE.NoToneMapping;
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
+            renderer.setClearColor(theme.background);
+            cubeContainer.appendChild(renderer.domElement);
+            
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.enableZoom = true; // Enable zoom for standalone version
+            
+            const renderScene = new RenderPass(scene, camera);
+            const bloomPass = new UnrealBloomPass(new THREE.Vector2(cubeContainer.clientWidth, cubeContainer.clientHeight), theme.bloom, 0.3, 0.9);
+
+            composer = new EffectComposer(renderer);
+            composer.addPass(renderScene);
+            composer.addPass(bloomPass);
+
+            new RGBELoader()
+                .load('https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/studio_small_03_1k.hdr', (texture) => {
+                    texture.mapping = THREE.EquirectangularReflectionMapping;
+                    scene.environment = texture;
+                    scene.background = theme.background;
+
+                    const ambientLight = new THREE.AmbientLight(theme.ambientLight, 0.6);
+                    scene.add(ambientLight);
+
+                    createRubiksCube();
+                });
+
+            window.addEventListener('resize', onWindowResize, false);
+            
+            // Theme toggle functionality
+            const themeToggle = document.getElementById('theme-toggle');
+            themeToggle.addEventListener('click', () => {
+                const currentTheme = document.body.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                document.body.setAttribute('data-theme', newTheme);
+                setTimeout(updateTheme, 50);
+            });
+            
+            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            mediaQuery.addEventListener('change', updateTheme);
+        }
+
+        function updateTheme() {
+            const theme = getThemeColors();
+            scene.background = theme.background;
+            renderer.setClearColor(theme.background);
+
+            if (cubeGroup) {
+                cubeGroup.children.forEach(piece => {
+                    if (piece.isMesh) {
+                        piece.material.color.set(theme.pieceColor);
+                        piece.children.forEach(sticker => {
+                             if(sticker.isMesh) {
+                                sticker.material.color.set(theme.stickerColor);
+                             }
+                        });
+                    }
+                });
+            }
+            
+            composer.passes[1].strength = theme.bloom;
+            const ambientLight = scene.children.find(c => c.isAmbientLight);
+            if(ambientLight) ambientLight.color.set(theme.ambientLight);
+        }
+
+        function createRubiksCube() {
+            const theme = getThemeColors();
+            cubeGroup = new THREE.Group();
+            rubiksCube = [];
+            
+            const spacing = 0.05;
+            const pieceSize = cubeSize - spacing;
+            const pieceGeometry = new RoundedBoxGeometry(pieceSize, pieceSize, pieceSize, 3, 0.05 * pieceSize);
+
+            for (let x = -1; x <= 1; x++) {
+                rubiksCube[x + 1] = [];
+                for (let y = -1; y <= 1; y++) {
+                    rubiksCube[x + 1][y + 1] = [];
+                    for (let z = -1; z <= 1; z++) {
+                        if (x === 0 && y === 0 && z === 0) {
+                            rubiksCube[x + 1][y + 1][z + 1] = null;
+                            continue;
+                        }
+
+                        const pieceMaterial = new THREE.MeshStandardMaterial({
+                            color: theme.pieceColor,
+                            metalness: 0.9,
+                            roughness: 0.5,
+                        });
+                        const piece = new THREE.Mesh(pieceGeometry, pieceMaterial);
+                        piece.position.set(x * cubeSize, y * cubeSize, z * cubeSize);
+                        piece.userData = { gridX: x + 1, gridY: y + 1, gridZ: z + 1 };
+                        
+                        const stickerSize = pieceSize * 0.85;
+                        const stickerThickness = 0.001;
+                        const stickerGeometry = new THREE.PlaneGeometry(stickerSize, stickerSize);
+                        
+                        const createSticker = (color, position, rotation) => {
+                            const stickerMaterial = new THREE.MeshStandardMaterial({
+                                color: theme.stickerColor,
+                                roughness: 0.9,
+                                metalness: 0.1,
+                            });
+                            const sticker = new THREE.Mesh(stickerGeometry, stickerMaterial);
+                            sticker.position.copy(position);
+                            sticker.rotation.set(rotation.x, rotation.y, rotation.z);
+                            return sticker;
+                        };
+
+                        const stickerOffset = pieceSize / 2 + stickerThickness;
+
+                        if (x === 1) piece.add(createSticker(0x000000, new THREE.Vector3(stickerOffset, 0, 0), new THREE.Euler(0, Math.PI / 2, 0)));
+                        if (x === -1) piece.add(createSticker(0x000000, new THREE.Vector3(-stickerOffset, 0, 0), new THREE.Euler(0, -Math.PI / 2, 0)));
+                        if (y === 1) piece.add(createSticker(0x000000, new THREE.Vector3(0, stickerOffset, 0), new THREE.Euler(-Math.PI / 2, 0, 0)));
+                        if (y === -1) piece.add(createSticker(0x000000, new THREE.Vector3(0, -stickerOffset, 0), new THREE.Euler(Math.PI / 2, 0, 0)));
+                        if (z === 1) piece.add(createSticker(0x000000, new THREE.Vector3(0, 0, stickerOffset), new THREE.Euler(0, 0, 0)));
+                        if (z === -1) piece.add(createSticker(0x000000, new THREE.Vector3(0, 0, -stickerOffset), new THREE.Euler(0, Math.PI, 0)));
+
+                        rubiksCube[x + 1][y + 1][z + 1] = piece;
+                        cubeGroup.add(piece);
+                    }
+                }
+            }
+            scene.add(cubeGroup);
+            setTimeout(startRotation, 2000);
+        }
+
+        function startRotation() {
+            if (isAnimating) return;
+
+            const axes = ['x', 'y', 'z'];
+            rotationAxis = axes[Math.floor(Math.random() * axes.length)];
+            const layer = Math.floor(Math.random() * 3);
+            rotationDirection = Math.sign(Math.random() - 0.5) || 1;
+
+            rotatingPieces = [];
+            
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    let piece;
+                    if (rotationAxis === 'x') {
+                        piece = rubiksCube[layer][i][j];
+                    } else if (rotationAxis === 'y') {
+                        piece = rubiksCube[i][layer][j];
+                    } else {
+                        piece = rubiksCube[i][j][layer];
+                    }
+                    if (piece) {
+                        rotatingPieces.push(piece);
+                    }
+                }
+            }
+
+            if (rotatingPieces.length > 0) {
+                rotationGroup = new THREE.Group();
+                cubeGroup.add(rotationGroup);
+
+                const pivot = new THREE.Vector3();
+                let sumX = 0, sumY = 0, sumZ = 0;
+                for (let piece of rotatingPieces) {
+                    const pos = piece.position;
+                    sumX += pos.x;
+                    sumY += pos.y;
+                    sumZ += pos.z;
+                }
+                pivot.set(sumX / rotatingPieces.length, sumY / rotatingPieces.length, sumZ / rotatingPieces.length);
+                
+                if (rotationAxis === 'x') {
+                    pivot.x = rotatingPieces[0].position.x;
+                } else if (rotationAxis === 'y') {
+                    pivot.y = rotatingPieces[0].position.y;
+                } else {
+                    pivot.z = rotatingPieces[0].position.z;
+                }
+                
+                rotationGroup.position.copy(pivot);
+                
+                rotatingPieces.forEach(piece => {
+                    rotationGroup.attach(piece);
+                });
+
+                isAnimating = true;
+                animationProgress = 0;
+            } else {
+                setTimeout(startRotation, 100);
+            }
+        }
+
+        function onWindowResize() {
+            camera.aspect = cubeContainer.clientWidth / cubeContainer.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(cubeContainer.clientWidth, cubeContainer.clientHeight);
+            composer.setSize(cubeContainer.clientWidth, cubeContainer.clientHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (isAnimating) {
+                animationProgress += animationSpeed;
+                const rotationAmount = (Math.PI / 2) * animationProgress * rotationDirection;
+
+                if (rotationAxis === 'x') {
+                    rotationGroup.rotation.x = rotationAmount;
+                } else if (rotationAxis === 'y') {
+                    rotationGroup.rotation.y = rotationAmount;
+                } else {
+                    rotationGroup.rotation.z = rotationAmount;
+                }
+
+                if (animationProgress >= 1) {
+                    const finalRotation = (Math.PI / 2) * rotationDirection;
+
+                    if (rotationAxis === 'x') {
+                        rotationGroup.rotation.x = finalRotation;
+                    } else if (rotationAxis === 'y') {
+                        rotationGroup.rotation.y = finalRotation;
+                    } else {
+                        rotationGroup.rotation.z = finalRotation;
+                    }
+
+                    rotationGroup.updateMatrixWorld(true);
+                    rotatingPieces.forEach(piece => {
+                        cubeGroup.attach(piece);
+                    });
+                    cubeGroup.remove(rotationGroup);
+                    
+                    rotatingPieces.forEach(piece => {
+                        piece.rotation.x = Math.round(piece.rotation.x / (Math.PI / 2)) * (Math.PI / 2);
+                        piece.rotation.y = Math.round(piece.rotation.y / (Math.PI / 2)) * (Math.PI / 2);
+                        piece.rotation.z = Math.round(piece.rotation.z / (Math.PI / 2)) * (Math.PI / 2);
+
+                        piece.position.x = Math.round(piece.position.x / cubeSize) * cubeSize;
+                        piece.position.y = Math.round(piece.position.y / cubeSize) * cubeSize;
+                        piece.position.z = Math.round(piece.position.z / cubeSize) * cubeSize;
+                    });
+
+                    updateCubeArray();
+                    
+                    isAnimating = false;
+                    setTimeout(startRotation, 500 + Math.random() * 1000);
+                }
+            }
+
+            if (cubeGroup && !isAnimating) {
+                cubeGroup.rotation.y += 0.001;
+                cubeGroup.rotation.x += 0.0005;
+            }
+
+            controls.update();
+            composer.render();
+        }
+
+        function updateCubeArray() {
+            for (let x = 0; x < 3; x++) {
+                for (let y = 0; y < 3; y++) {
+                    for (let z = 0; z < 3; z++) {
+                        rubiksCube[x][y][z] = null;
+                    }
+                }
+            }
+            
+            cubeGroup.children.forEach(piece => {
+                if (piece instanceof THREE.Group) return;
+                const x = Math.round((piece.position.x + cubeSize) / cubeSize);
+                const y = Math.round((piece.position.y + cubeSize) / cubeSize);
+                const z = Math.round((piece.position.z + cubeSize) / cubeSize);
+                
+                if (x >= 0 && x < 3 && y >= 0 && y < 3 && z >= 0 && z < 3) {
+                    rubiksCube[x][y][z] = piece;
+                } else {
+                    let bestX = Math.max(0, Math.min(2, x));
+                    let bestY = Math.max(0, Math.min(2, y));
+                    let bestZ = Math.max(0, Math.min(2, z));
+                    
+                    if (rubiksCube[bestX][bestY][bestZ] === null) {
+                        rubiksCube[bestX][bestY][bestZ] = piece;
+                        piece.position.set((bestX - 1) * cubeSize, (bestY - 1) * cubeSize, (bestZ - 1) * cubeSize);
+                    }
+                }
+            });
+        }
+
+        // Initialize the cube animation when the DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            init();
+            animate();
+        });
+    </script>
+</body>
+</html> 

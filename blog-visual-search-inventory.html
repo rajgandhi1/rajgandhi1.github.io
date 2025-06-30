@@ -61,7 +61,7 @@
                 <ol>
                     <li>Open the app, tap the camera button</li>
                     <li>Point your phone at the thing you're looking for</li>
-                    <li>Get back the exact item with its current location, condition, and whatever other metadata you need</li>
+                    <li>Get back the exact item with its current location, condition and whatever other metadata you need</li>
                 </ol>
                 
                 <p>That's it. No typing, no remembering cryptic ID numbers, no browsing through categories.</p>
@@ -80,7 +80,7 @@
                 <h3>1. The embedding model</h3>
                 <p>I'm using a modified CLIP model called CSD (Contrastive Search Descriptor)<sup>1</sup> that's specifically trained for visual object analysis. It takes any 224x224 image and spits out a 768-dimensional vector that represents the visual "fingerprint" of whatever's in the photo.</p>
                 
-                <p>The key insight here is that it extracts <strong>style embeddings</strong> rather than just content embeddings. This means it captures things like material, texture, shape, and form—exactly what you need to distinguish between similar objects in an inventory.</p>
+                <p>The key insight here is that it extracts <strong>style embeddings</strong> rather than just content embeddings. This means it captures things like material, texture, shape and form - exactly what you need to distinguish between similar objects in an inventory.</p>
                 
                 <h3>2. Qdrant for vector search</h3>
                 <p>Here's where it gets fun. All those 768-dimensional embeddings get stored in Qdrant<sup>2</sup>, which is basically a search engine designed specifically for high-dimensional vectors. When someone uploads a photo, the system:</p>
@@ -94,25 +94,25 @@
                 <p>The search is based on cosine similarity, which works surprisingly well for this use case. Items that look similar end up close together in the 768-dimensional space.</p>
                 
                 <h3>3. PostgreSQL for the boring stuff</h3>
-                <p>The vector search gives you visual matches, but you still need all the operational metadata—current location, condition notes, who last moved it, etc. This all lives in a regular PostgreSQL database, indexed by item ID.</p>
+                <p>The vector search gives you visual matches, but you still need all the operational metadata - current location, condition notes, who last moved it, etc. This all lives in a regular PostgreSQL database, indexed by item ID.</p>
                 
                 <p>The workflow is: vector search finds the candidates, then PostgreSQL lookup gets you the full record with everything you actually need to locate and manage the item.</p>
                 
                 <h3>4. The ingestion pipeline</h3>
-                <p>Getting your existing inventory into this system is the hard part. Most organizations have their inventory data scattered across spreadsheets, legacy databases, and photo folders on various people's computers.</p>
+                <p>Getting your existing inventory into this system is the hard part. Most organizations have their inventory data scattered across spreadsheets, legacy databases and photo folders on various people's computers.</p>
                 
                 <p>I built a batch processing system that:</p>
                 <ul>
                     <li>Ingests whatever data format you have (CSV, database exports, etc.)</li>
                     <li>Standardizes the metadata fields</li>
                     <li>Processes all the item photos to generate embeddings</li>
-                    <li>Handles missing images, duplicate detection, and data quality issues</li>
+                    <li>Handles missing images, duplicate detection and data quality issues</li>
                     <li>Stores everything in both databases</li>
                 </ul>
                 
                 <p>It runs with configurable concurrency (8 workers seems to be the sweet spot) and has comprehensive error handling, because real-world inventory data is always messier than you expect.</p>
                 
-                <p>The whole stack is containerized and runs on AWS. The embedding service is Python (because that's where all the ML libraries are), and the API layer is Node.js (because it's fast and easy to deploy).</p>
+                <p>The whole stack is containerized and runs on AWS. The embedding service is Python (because that's where all the ML libraries are) and the API layer is Node.js (because it's fast and easy to deploy).</p>
                 
                 <h2>Implementation details</h2>
                 
@@ -128,7 +128,7 @@
                 <p>For PostgreSQL, I needed a schema that could handle the chaos of real-world inventory data. The key insight is that every organization has different metadata fields, so you need a flexible schema that doesn't break when someone has 47 custom fields for their ceramic collection.</p>
                 
                 <h3>The embedding service</h3>
-                <p>This was the trickiest part. Running deep learning models in production is annoying—they're huge, they need specific Python versions, they eat memory, and they take forever to load.</p>
+                <p>This was the trickiest part. Running deep learning models in production is annoying - they're huge, they need specific Python versions, they eat memory and they take forever to load.</p>
                 
                 <p>I ended up wrapping the CSD model in a FastAPI service that:</p>
                 <ul>
@@ -210,7 +210,7 @@ const workers = Array.from({ length: 8 }, (_, i) =>
                 <ul>
                     <li><strong>Speed</strong>: Sub-500ms search times, even with the full dataset</li>
                     <li><strong>Accuracy</strong>: ~85% for decent photos, which is way better than text search</li>
-                    <li><strong>Robustness</strong>: Works surprisingly well with poor lighting, weird angles, and partial views</li>
+                    <li><strong>Robustness</strong>: Works surprisingly well with poor lighting, weird angles and partial views</li>
                     <li><strong>Scale</strong>: No performance degradation as the index grows (thanks, Qdrant)</li>
                 </ul>
                 
@@ -228,12 +228,12 @@ const workers = Array.from({ length: 8 }, (_, i) =>
                 <ol>
                     <li><strong>Duplicate detection</strong>: Items that end up with very similar embeddings are often duplicates in the inventory system</li>
                     <li><strong>Condition tracking</strong>: The same item photographed years apart often has noticeably different embeddings if its condition has changed significantly</li>
-                    <li><strong>Variant identification</strong>: Finding items that are similar but not identical—useful for "we need another one like this" requests</li>
+                    <li><strong>Variant identification</strong>: Finding items that are similar but not identical - useful for "we need another one like this" requests</li>
                 </ol>
                 
                 <h2>The bigger picture</h2>
                 
-                <p>The most interesting thing about building this wasn't the technical implementation—it was watching how people actually use visual search versus traditional inventory systems.</p>
+                <p>The most interesting thing about building this wasn't the technical implementation - it was watching how people actually use visual search versus traditional inventory systems.</p>
                 
                 <p>With text search, people limit their queries to what they think might be in the database. They search for "sculpture" instead of "that weird twisted metal thing" because they're trying to match the database vocabulary.</p>
                 
@@ -247,7 +247,7 @@ const workers = Array.from({ length: 8 }, (_, i) =>
                 
                 <p>Visual search isn't going to replace traditional inventory management overnight, but it's a glimpse of what these systems could be like if we designed them around how people actually think and work.</p>
                 
-                <p>The real breakthrough isn't the technology—it's the user experience. When you can find anything in your inventory by just pointing your phone at it, you stop thinking about "database queries" and start thinking about "where did I put that thing?"</p>
+                <p>The real breakthrough isn't the technology - it's the user experience. When you can find anything in your inventory by just pointing your phone at it, you stop thinking about "database queries" and start thinking about "where did I put that thing?"</p>
                 
                 <p>This system has been running in production for several months now, and the feedback has been universally positive. People who were previously intimidated by the inventory database are now power users. The time spent searching for items has dropped dramatically.</p>
                 

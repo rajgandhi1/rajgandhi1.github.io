@@ -45,7 +45,7 @@
                 <p>So I reached for a greedy algorithm.</p>
                 
                 <h2>What's a greedy algorithm?</h2>
-                <p>A greedy algorithm builds a solution step by step, always choosing the best local option at each step — without backtracking or worrying about future consequences.</p>
+                <p>A greedy algorithm builds a solution step by step, always choosing the best local option at each step - without backtracking or worrying about future consequences.</p>
                 
                 <p>In our case, it looks like this:</p>
                 <ol>
@@ -57,7 +57,7 @@
                 <p>It's fast. It's simple. And in many real-world cases, it gives an answer that's either optimal or good enough to be indistinguishable from optimal.</p>
                 
                 <h2>What does "covered" mean?</h2>
-                <p>We defined a face as "covered" if at least one triangle from that face is visible in the view — i.e., its normal vector points sufficiently toward the camera.</p>
+                <p>We defined a face as "covered" if at least one triangle from that face is visible in the view - i.e., its normal vector points sufficiently toward the camera.</p>
                 
                 <p>We used this condition:</p>
                 <pre><code>np.dot(normal, -view_direction) > angle_threshold</code></pre>
@@ -69,7 +69,7 @@
                 
                 <h2>Why greedy works well here</h2>
                 <ul>
-                    <li>Each view can only do so much — you're constrained to six fixed angles.</li>
+                    <li>Each view can only do so much - you're constrained to six fixed angles.</li>
                     <li>Most parts don't require exotic viewpoints.</li>
                     <li>The best view at each step tends to be obvious (e.g. if "Front" covers five unseen faces and "Top" only covers two, you pick "Front").</li>
                 </ul>
